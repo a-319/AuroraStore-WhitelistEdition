@@ -548,6 +548,10 @@
     <string name="select_app_for_details">Select an app for more details</string>
     <string name="action_filter_no_ads">No advertisements</string>
     <string name="action_filter_no_gms">No play services</string>
-    
+
+    <!-- Device Owner Installer -->
+    <string name="pref_install_mode_device_owner">Device Owner</string>
+    <string name="device_owner_installer_subtitle">Silent installation with device owner privileges</string>
+    <string name="device_owner_installer_desc">Uses Device Owner permissions for completely silent app installation without any user interaction. Requires the app to be set as device owner.</string>
 
 </resources>
