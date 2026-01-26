@@ -20,6 +20,7 @@
 
 package com.aurora.store.data.installer
 
+import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -52,7 +53,8 @@ class AppInstaller @Inject constructor(
     private val rootInstaller: RootInstaller,
     private val serviceInstaller: ServiceInstaller,
     private val amInstaller: AMInstaller,
-    private val shizukuInstaller: ShizukuInstaller
+    private val shizukuInstaller: ShizukuInstaller,
+    private val deviceOwnerInstaller: DeviceOwnerInstaller
 ) {
 
     companion object {
@@ -73,8 +75,22 @@ class AppInstaller @Inject constructor(
                 if (hasRootAccess()) RootInstaller.installerInfo else null,
                 if (hasAuroraService(context)) ServiceInstaller.installerInfo else null,
                 if (hasAppManager(context)) AMInstaller.installerInfo else null,
-                if (hasShizukuOrSui(context)) ShizukuInstaller.installerInfo else null
+                if (hasShizukuOrSui(context)) ShizukuInstaller.installerInfo else null,
+                if (isDeviceOwner(context)) DeviceOwnerInstaller.installerInfo else null
             )
+        }
+
+        /**
+         * Checks if the app is set as device owner
+         * @param context [Context]
+         */
+        fun isDeviceOwner(context: Context): Boolean {
+            return try {
+                val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+                dpm.isDeviceOwnerApp(context.packageName)
+            } catch (e: Exception) {
+                false
+            }
         }
 
         /**
@@ -106,6 +122,7 @@ class AppInstaller @Inject constructor(
                 Installer.SERVICE -> hasAuroraService(context)
                 Installer.AM -> false // We cannot check if AppManager has ability to auto-update
                 Installer.SHIZUKU -> isOAndAbove && hasShizukuOrSui(context) && hasShizukuPerm()
+                Installer.DEVICE_OWNER -> isDeviceOwner(context)
             }
         }
 
@@ -172,6 +189,13 @@ class AppInstaller @Inject constructor(
             Installer.SHIZUKU -> {
                 if (hasShizukuOrSui(context) && hasShizukuPerm()) {
                     shizukuInstaller
+                } else {
+                    defaultInstaller
+                }
+            }
+            Installer.DEVICE_OWNER -> {
+                if (isDeviceOwner(context)) {
+                    deviceOwnerInstaller
                 } else {
                     defaultInstaller
                 }
