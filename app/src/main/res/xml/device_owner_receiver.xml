@@ -13,4 +13,5 @@
         <encrypted-storage />
         <disable-camera />
     </uses-policies>
+    <support-transfer-ownership />
 </device-admin>
