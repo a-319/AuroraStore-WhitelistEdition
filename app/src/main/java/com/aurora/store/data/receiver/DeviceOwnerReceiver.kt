@@ -35,6 +35,8 @@ class DeviceOwnerReceiver : DeviceAdminReceiver() {
 
     companion object {
         private const val TAG = "DeviceOwnerReceiver"
+        // החבילה לה נרצה לתת הרשאות התקנה
+        private const val TARGET_DPC = "com.afwsamples.testdpc"
     }
 
     override fun onEnabled(context: Context, intent: Intent) {
@@ -47,21 +49,29 @@ class DeviceOwnerReceiver : DeviceAdminReceiver() {
         Log.i(TAG, "Aurora Store disabled as Device Admin")
     }
 
-    override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
-        when (intent.action) {
-            ACTION_DEVICE_ADMIN_ENABLED -> {
-                Log.i(TAG, "Device Admin enabled via broadcast")
-            }
-            ACTION_DEVICE_ADMIN_DISABLED -> {
-                Log.i(TAG, "Device Admin disabled via broadcast")
-            }
-        }
-    }
-
     override fun onTransferOwnershipComplete(context: Context, bundle: PersistableBundle?) {
         super.onTransferOwnershipComplete(context, bundle)
         Log.i(TAG, "Device Owner transfer completed successfully")
+
+        // קריאה לפונקציה שמעניקה את ההרשאות ל-Test DPC
+        grantInstallationDelegation(context)
+    }
+
+    private fun grantInstallationDelegation(context: Context) {
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val adminComponent = ComponentName(context, DeviceOwnerReceiver::class.java)
+
+        try {
+            // הגדרת ה-Scope של התקנת אפליקציות
+            val scopes = listOf(DevicePolicyManager.DELEGATION_PACKAGE_INSTALLATION)
+
+            // הענקת הסמכות ל-Test DPC
+            dpm.setDelegatedScopes(adminComponent, TARGET_DPC, scopes)
+            
+            Log.i(TAG, "Successfully granted DELEGATION_PACKAGE_INSTALLATION to $TARGET_DPC")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to set delegated scopes: ${e.message}")
+        }
     }
 
     override fun onTransferAffiliatedProfileOwnershipComplete(context: Context, user: android.os.UserHandle) {
