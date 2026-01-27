@@ -37,7 +37,6 @@ class DeviceOwnerReceiver : DeviceAdminReceiver() {
 
     companion object {
         private const val TAG = "DeviceOwnerReceiver"
-        // החבילה לה נרצה לתת הרשאות התקנה
         private const val TARGET_DPC = "com.afwsamples.testdpc"
     }
 
@@ -60,19 +59,24 @@ class DeviceOwnerReceiver : DeviceAdminReceiver() {
     }
 
     private fun grantInstallationDelegation(context: Context) {
-        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        // תיקון ה-Service Casting
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
         val adminComponent = ComponentName(context, DeviceOwnerReceiver::class.java)
 
-        try {
-            // הגדרת ה-Scope של התקנת אפליקציות
-            val scopes = listOf(DevicePolicyManager.DELEGATION_PACKAGE_INSTALLATION)
+        if (dpm != null) {
+            try {
+                // הגדרת ה-Scope של התקנת אפליקציות
+                val scopes = listOf(DevicePolicyManager.DELEGATION_PACKAGE_INSTALLATION)
 
-            // הענקת הסמכות ל-Test DPC
-            dpm.setDelegatedScopes(adminComponent, TARGET_DPC, scopes)
-            
-            Log.i(TAG, "Successfully granted DELEGATION_PACKAGE_INSTALLATION to $TARGET_DPC")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to set delegated scopes: ${e.message}")
+                // הענקת הסמכות ל-Test DPC
+                dpm.setDelegatedScopes(adminComponent, TARGET_DPC, scopes)
+                
+                Log.i(TAG, "Successfully granted DELEGATION_PACKAGE_INSTALLATION to $TARGET_DPC")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to set delegated scopes: ${e.message}")
+            }
+        } else {
+            Log.e(TAG, "DevicePolicyManager is null")
         }
     }
 
