@@ -27,14 +27,18 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.Toast
+import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
@@ -64,7 +68,8 @@ class InstallationPreference : PreferenceFragmentCompat() {
         val info: DeviceAdminInfo,
         val label: String,
         val packageName: String,
-        val component: ComponentName
+        val component: ComponentName,
+        val icon: Drawable?
     )
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -85,10 +90,8 @@ class InstallationPreference : PreferenceFragmentCompat() {
         val devicePolicyManager = requireContext().getSystemService<DevicePolicyManager>()
         val isDeviceOwner = devicePolicyManager?.isDeviceOwnerApp(packageName) ?: false
 
-        // Show or hide the entire Device Owner category
         findPreference<PreferenceCategory>(PREFERENCE_CATEGORY_DEVICE_OWNER)?.isVisible = isDeviceOwner
 
-        // Clear Device Owner preference
         findPreference<Preference>(PREFERENCE_INSTALLATION_DEVICE_OWNER_CLEAR)?.apply {
             isVisible = isDeviceOwner
             setOnPreferenceClickListener {
@@ -102,7 +105,7 @@ class InstallationPreference : PreferenceFragmentCompat() {
                             context.toast(R.string.device_owner_removed_success)
                             activity?.recreate()
                         } catch (e: Exception) {
-                            Log.e(TAG, "Failed to clear device owner: ${e.message}")
+                            Log.e(TAG, "Failed to clear device owner: \${e.message}")
                             context.toast(R.string.device_owner_removed_failed)
                         }
                     },
@@ -112,7 +115,6 @@ class InstallationPreference : PreferenceFragmentCompat() {
             }
         }
 
-        // Transfer Device Owner preference
         findPreference<Preference>(PREFERENCE_INSTALLATION_DEVICE_OWNER_TRANSFER)?.apply {
             isVisible = isDeviceOwner && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
             setOnPreferenceClickListener {
@@ -126,7 +128,6 @@ class InstallationPreference : PreferenceFragmentCompat() {
 
     @RequiresApi(Build.VERSION_CODES.P)
     private fun showTransferDialog(devicePolicyManager: DevicePolicyManager, currentPackageName: String) {
-        // Get all apps with DeviceAdminReceiver (similar to Dhizuku)
         val availableApps = getDeviceAdminApps(currentPackageName)
 
         if (availableApps.isEmpty()) {
@@ -134,11 +135,11 @@ class InstallationPreference : PreferenceFragmentCompat() {
             return
         }
 
-        val appNames = availableApps.map { "${it.label}\n${it.packageName}" }.toTypedArray()
+        val adapter = AppListAdapter(requireContext(), availableApps)
 
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.transfer_device_owner)
-            .setItems(appNames) { _, which ->
+            .setAdapter(adapter) { _, which ->
                 val selectedApp = availableApps[which]
                 confirmAndTransfer(devicePolicyManager, currentPackageName, selectedApp)
             }
@@ -154,7 +155,7 @@ class InstallationPreference : PreferenceFragmentCompat() {
     ) {
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.transfer_device_owner)
-            .setMessage("Transfer Device Owner to ${targetApp.label}?")
+            .setMessage("Transfer Device Owner to \${targetApp.label}?")
             .setPositiveButton(R.string.transfer) { _, _ ->
                 transferDeviceOwner(devicePolicyManager, currentPackageName, targetApp)
             }
@@ -176,29 +177,34 @@ class InstallationPreference : PreferenceFragmentCompat() {
                     val component = adminInfo.component
                     val appInfo = resolveInfo.activityInfo.applicationInfo
                     
-                    // Skip current app and system apps
                     if (component.packageName == currentPackageName) return@mapNotNull null
                     
-                    // Get app label
                     val label = try {
                         appInfo.loadLabel(packageManager).toString()
                     } catch (e: Exception) {
                         component.packageName
                     }
 
+                    val icon = try {
+                        appInfo.loadIcon(packageManager)
+                    } catch (e: Exception) {
+                        null
+                    }
+
                     DeviceAdminApp(
                         info = adminInfo,
                         label = label,
                         packageName = component.packageName,
-                        component = component
+                        component = component,
+                        icon = icon
                     )
                 } catch (e: Exception) {
-                    Log.w(TAG, "Failed to parse DeviceAdminInfo: ${e.message}")
+                    Log.w(TAG, "Failed to parse DeviceAdminInfo: \${e.message}")
                     null
                 }
             }.sortedBy { it.label.lowercase() }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to query device admin apps: ${e.message}")
+            Log.e(TAG, "Failed to query device admin apps: \${e.message}")
             emptyList()
         }
     }
@@ -214,17 +220,16 @@ class InstallationPreference : PreferenceFragmentCompat() {
             val targetAdmin = targetApp.component
             val bundle = PersistableBundle()
             
-            Log.i(TAG, "Transferring ownership from $currentAdmin to $targetAdmin")
+            Log.i(TAG, "Transferring ownership from \$currentAdmin to \$targetAdmin")
             devicePolicyManager.transferOwnership(currentAdmin, targetAdmin, bundle)
             
             requireContext().toast(R.string.device_owner_transfer_success)
             
-            // Give some time for the transfer to complete before recreating
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                 activity?.recreate()
             }, 1000)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to transfer device owner: ${e.message}", e)
+            Log.e(TAG, "Failed to transfer device owner: \${e.message}", e)
             requireContext().toast(R.string.device_owner_transfer_failed)
         }
     }
@@ -235,6 +240,35 @@ class InstallationPreference : PreferenceFragmentCompat() {
         view.findViewById<Toolbar>(R.id.toolbar)?.apply {
             title = getString(R.string.title_installation)
             setNavigationOnClickListener { findNavController().navigateUp() }
+        }
+    }
+
+    private class AppListAdapter(
+        context: Context,
+        private val apps: List<DeviceAdminApp>
+    ) : ArrayAdapter<DeviceAdminApp>(context, 0, apps) {
+
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+            val view = convertView ?: LayoutInflater.from(context).inflate(
+                android.R.layout.select_dialog_item,
+                parent,
+                false
+            )
+
+            val app = apps[position]
+            
+            view.findViewById<ImageView>(android.R.id.icon)?.apply {
+                if (app.icon != null) {
+                    setImageDrawable(app.icon)
+                    visibility = View.VISIBLE
+                } else {
+                    visibility = View.GONE
+                }
+            }
+
+            view.findViewById<TextView>(android.R.id.text1)?.text = "\${app.label}\n\${app.packageName}"
+
+            return view
         }
     }
 }
