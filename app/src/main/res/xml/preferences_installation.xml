@@ -38,10 +38,23 @@
         app:summary="@string/pref_install_delete_summary"
         app:title="@string/pref_install_delete_title" />
 
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:key="PREFERENCE_CATEGORY_DEVICE_OWNER"
+        app:singleLineTitle="false"
+        app:title="@string/device_owner_management" />
+
     <Preference
         app:iconSpaceReserved="false"
         app:isPreferenceVisible="false"
-        app:key="PREFERENCE_INSTALLATION_DEVICE_OWNER"
+        app:key="PREFERENCE_INSTALLATION_DEVICE_OWNER_CLEAR"
         app:summary="@string/pref_clear_device_owner_summary"
         app:title="@string/pref_clear_device_owner_title" />
+
+    <Preference
+        app:iconSpaceReserved="false"
+        app:isPreferenceVisible="false"
+        app:key="PREFERENCE_INSTALLATION_DEVICE_OWNER_TRANSFER"
+        app:summary="@string/transfer_device_owner_desc"
+        app:title="@string/transfer_device_owner" />
 </androidx.preference.PreferenceScreen>
