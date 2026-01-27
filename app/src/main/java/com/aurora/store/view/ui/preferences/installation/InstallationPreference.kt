@@ -250,14 +250,14 @@ class InstallationPreference : PreferenceFragmentCompat() {
 
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             val view = convertView ?: LayoutInflater.from(context).inflate(
-                android.R.layout.select_dialog_item,
+                R.layout.list_item_app_with_icon,
                 parent,
                 false
             )
 
             val app = apps[position]
             
-            view.findViewById<ImageView>(android.R.id.icon)?.apply {
+            view.findViewById<ImageView>(R.id.app_icon)?.apply {
                 if (app.icon != null) {
                     setImageDrawable(app.icon)
                     visibility = View.VISIBLE
@@ -266,7 +266,7 @@ class InstallationPreference : PreferenceFragmentCompat() {
                 }
             }
 
-            view.findViewById<TextView>(android.R.id.text1)?.text = "${app.label}\n${app.packageName}"
+            view.findViewById<TextView>(R.id.app_text)?.text = "${app.label}\n${app.packageName}"
 
             return view
         }
