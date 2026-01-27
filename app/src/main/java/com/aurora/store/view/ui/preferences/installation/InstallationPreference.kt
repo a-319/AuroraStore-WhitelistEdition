@@ -20,15 +20,20 @@
 
 package com.aurora.store.view.ui.preferences.installation
 
+import android.app.admin.DeviceAdminInfo
+import android.app.admin.DeviceAdminReceiver
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
+import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.util.Log
 import android.view.View
-import android.widget.EditText
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
@@ -54,6 +59,13 @@ class InstallationPreference : PreferenceFragmentCompat() {
         private const val PREFERENCE_INSTALLATION_DEVICE_OWNER_TRANSFER = "PREFERENCE_INSTALLATION_DEVICE_OWNER_TRANSFER"
         private const val PREFERENCE_CATEGORY_DEVICE_OWNER = "PREFERENCE_CATEGORY_DEVICE_OWNER"
     }
+
+    data class DeviceAdminApp(
+        val info: DeviceAdminInfo,
+        val label: String,
+        val packageName: String,
+        val component: ComponentName
+    )
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.preferences_installation, rootKey)
@@ -114,50 +126,97 @@ class InstallationPreference : PreferenceFragmentCompat() {
 
     @RequiresApi(Build.VERSION_CODES.P)
     private fun showTransferDialog(devicePolicyManager: DevicePolicyManager, currentPackageName: String) {
-        val input = EditText(requireContext()).apply {
-            hint = getString(R.string.target_package_name)
+        // Get all apps with DeviceAdminReceiver (similar to Dhizuku)
+        val availableApps = getDeviceAdminApps(currentPackageName)
+
+        if (availableApps.isEmpty()) {
+            requireContext().toast("No apps with Device Admin Receiver found")
+            return
         }
+
+        val appNames = availableApps.map { "${it.label}\n${it.packageName}" }.toTypedArray()
 
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.transfer_device_owner)
-            .setMessage(R.string.transfer_device_owner_desc)
-            .setView(input)
-            .setPositiveButton(R.string.transfer) { _, _ ->
-                val targetPackageName = input.text.toString().trim()
-                if (targetPackageName.isNotEmpty()) {
-                    transferDeviceOwner(devicePolicyManager, currentPackageName, targetPackageName)
-                } else {
-                    requireContext().toast("Please enter a valid package name")
-                }
+            .setItems(appNames) { _, which ->
+                val selectedApp = availableApps[which]
+                confirmAndTransfer(devicePolicyManager, currentPackageName, selectedApp)
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 
     @RequiresApi(Build.VERSION_CODES.P)
+    private fun confirmAndTransfer(
+        devicePolicyManager: DevicePolicyManager,
+        currentPackageName: String,
+        targetApp: DeviceAdminApp
+    ) {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.transfer_device_owner)
+            .setMessage("Transfer Device Owner to ${targetApp.label}?")
+            .setPositiveButton(R.string.transfer) { _, _ ->
+                transferDeviceOwner(devicePolicyManager, currentPackageName, targetApp)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun getDeviceAdminApps(currentPackageName: String): List<DeviceAdminApp> {
+        val packageManager = requireContext().packageManager
+        val intent = Intent(DeviceAdminReceiver.ACTION_DEVICE_ADMIN_ENABLED)
+        
+        return try {
+            packageManager.queryBroadcastReceivers(
+                intent,
+                PackageManager.GET_META_DATA
+            ).mapNotNull { resolveInfo ->
+                try {
+                    val adminInfo = DeviceAdminInfo(requireContext(), resolveInfo)
+                    val component = adminInfo.component
+                    val appInfo = resolveInfo.activityInfo.applicationInfo
+                    
+                    // Skip current app and system apps
+                    if (component.packageName == currentPackageName) return@mapNotNull null
+                    
+                    // Get app label
+                    val label = try {
+                        appInfo.loadLabel(packageManager).toString()
+                    } catch (e: Exception) {
+                        component.packageName
+                    }
+
+                    DeviceAdminApp(
+                        info = adminInfo,
+                        label = label,
+                        packageName = component.packageName,
+                        component = component
+                    )
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to parse DeviceAdminInfo: ${e.message}")
+                    null
+                }
+            }.sortedBy { it.label.lowercase() }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to query device admin apps: ${e.message}")
+            emptyList()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.P)
     private fun transferDeviceOwner(
         devicePolicyManager: DevicePolicyManager,
         currentPackageName: String,
-        targetPackageName: String
+        targetApp: DeviceAdminApp
     ) {
         try {
             val currentAdmin = ComponentName(currentPackageName, DeviceOwnerReceiver::class.java.name)
-            
-            // Try to find the target app's DeviceAdminReceiver
-            val targetPm = requireContext().packageManager
-            val targetIntent = android.content.Intent(android.app.admin.DeviceAdminReceiver.ACTION_DEVICE_ADMIN_ENABLED)
-            targetIntent.setPackage(targetPackageName)
-            
-            val receivers = targetPm.queryBroadcastReceivers(targetIntent, 0)
-            if (receivers.isEmpty()) {
-                requireContext().toast(R.string.device_owner_transfer_failed)
-                return
-            }
-
-            val targetAdmin = ComponentName(targetPackageName, receivers[0].activityInfo.name)
+            val targetAdmin = targetApp.component
             val bundle = PersistableBundle()
             
+            Log.i(TAG, "Transferring ownership from $currentAdmin to $targetAdmin")
             devicePolicyManager.transferOwnership(currentAdmin, targetAdmin, bundle)
+            
             requireContext().toast(R.string.device_owner_transfer_success)
             
             // Give some time for the transfer to complete before recreating
