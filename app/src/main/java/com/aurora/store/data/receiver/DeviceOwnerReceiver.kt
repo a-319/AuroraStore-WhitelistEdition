@@ -25,8 +25,10 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.PersistableBundle
 import android.util.Log
+import androidx.annotation.RequiresApi
 
 /**
  * DeviceAdminReceiver for Aurora Store to support Device Owner mode.
@@ -50,25 +52,22 @@ class DeviceOwnerReceiver : DeviceAdminReceiver() {
         Log.i(TAG, "Aurora Store disabled as Device Admin")
     }
 
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onTransferOwnershipComplete(context: Context, bundle: PersistableBundle?) {
         super.onTransferOwnershipComplete(context, bundle)
         Log.i(TAG, "Device Owner transfer completed successfully")
 
-        // קריאה לפונקציה שמעניקה את ההרשאות ל-Test DPC
         grantInstallationDelegation(context)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun grantInstallationDelegation(context: Context) {
-        // תיקון ה-Service Casting
         val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
         val adminComponent = ComponentName(context, DeviceOwnerReceiver::class.java)
 
         if (dpm != null) {
             try {
-                // הגדרת ה-Scope של התקנת אפליקציות
-                val scopes = listOf(DevicePolicyManager.DELEGATION_PACKAGE_INSTALLATION)
-
-                // הענקת הסמכות ל-Test DPC
+                val scopes = listOf("delegation-package-access")
                 dpm.setDelegatedScopes(adminComponent, TARGET_DPC, scopes)
                 
                 Log.i(TAG, "Successfully granted DELEGATION_PACKAGE_INSTALLATION to $TARGET_DPC")
@@ -80,6 +79,7 @@ class DeviceOwnerReceiver : DeviceAdminReceiver() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onTransferAffiliatedProfileOwnershipComplete(context: Context, user: android.os.UserHandle) {
         super.onTransferAffiliatedProfileOwnershipComplete(context, user)
         Log.i(TAG, "Affiliated Profile Owner transfer completed for user: $user")
