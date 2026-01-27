@@ -105,7 +105,7 @@ class InstallationPreference : PreferenceFragmentCompat() {
                             context.toast(R.string.device_owner_removed_success)
                             activity?.recreate()
                         } catch (e: Exception) {
-                            Log.e(TAG, "Failed to clear device owner: \${e.message}")
+                            Log.e(TAG, "Failed to clear device owner: ${e.message}")
                             context.toast(R.string.device_owner_removed_failed)
                         }
                     },
@@ -155,7 +155,7 @@ class InstallationPreference : PreferenceFragmentCompat() {
     ) {
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.transfer_device_owner)
-            .setMessage("Transfer Device Owner to \${targetApp.label}?")
+            .setMessage("Transfer Device Owner to ${targetApp.label}?")
             .setPositiveButton(R.string.transfer) { _, _ ->
                 transferDeviceOwner(devicePolicyManager, currentPackageName, targetApp)
             }
@@ -199,12 +199,12 @@ class InstallationPreference : PreferenceFragmentCompat() {
                         icon = icon
                     )
                 } catch (e: Exception) {
-                    Log.w(TAG, "Failed to parse DeviceAdminInfo: \${e.message}")
+                    Log.w(TAG, "Failed to parse DeviceAdminInfo: ${e.message}")
                     null
                 }
             }.sortedBy { it.label.lowercase() }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to query device admin apps: \${e.message}")
+            Log.e(TAG, "Failed to query device admin apps: ${e.message}")
             emptyList()
         }
     }
@@ -220,7 +220,7 @@ class InstallationPreference : PreferenceFragmentCompat() {
             val targetAdmin = targetApp.component
             val bundle = PersistableBundle()
             
-            Log.i(TAG, "Transferring ownership from \$currentAdmin to \$targetAdmin")
+            Log.i(TAG, "Transferring ownership from $currentAdmin to $targetAdmin")
             devicePolicyManager.transferOwnership(currentAdmin, targetAdmin, bundle)
             
             requireContext().toast(R.string.device_owner_transfer_success)
@@ -229,7 +229,7 @@ class InstallationPreference : PreferenceFragmentCompat() {
                 activity?.recreate()
             }, 1000)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to transfer device owner: \${e.message}", e)
+            Log.e(TAG, "Failed to transfer device owner: ${e.message}", e)
             requireContext().toast(R.string.device_owner_transfer_failed)
         }
     }
@@ -266,7 +266,7 @@ class InstallationPreference : PreferenceFragmentCompat() {
                 }
             }
 
-            view.findViewById<TextView>(android.R.id.text1)?.text = "\${app.label}\n\${app.packageName}"
+            view.findViewById<TextView>(android.R.id.text1)?.text = "${app.label}\n${app.packageName}"
 
             return view
         }
