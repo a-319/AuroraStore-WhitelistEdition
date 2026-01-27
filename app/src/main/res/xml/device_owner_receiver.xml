@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<device-admin xmlns:android="http://schemas.android.com/apk/res/android"
-    android:visible="false">
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-policies>
-        <!-- Policies for device owner app installation -->
+        <!-- Basic device admin policies -->
+        <limit-password />
+        <watch-login />
+        <reset-password />
+        <force-lock />
+        <wipe-data />
+        
+        <!-- Extended policies for Device Owner -->
+        <expire-password />
+        <encrypted-storage />
+        <disable-camera />
     </uses-policies>
 </device-admin>
