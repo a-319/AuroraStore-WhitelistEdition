@@ -239,6 +239,9 @@ dependencies {
     implementation(libs.rikka.shizuku.api)
     implementation(libs.rikka.shizuku.provider)
 
+    //Dhizuku
+    implementation("com.github.iamr0s:Dhizuku-API:2.4")
+
     implementation(libs.lsposed.hiddenapibypass)
 
     //Test
