@@ -239,8 +239,8 @@ dependencies {
     implementation(libs.rikka.shizuku.api)
     implementation(libs.rikka.shizuku.provider)
 
-    //Dhizuku
-    implementation("com.github.iamr0s:Dhizuku:2.4")
+    //Dhizuku - Using latest commit hash or version tag
+    implementation("com.github.iamr0s:Dhizuku:v2.4")
 
     implementation(libs.lsposed.hiddenapibypass)
 
