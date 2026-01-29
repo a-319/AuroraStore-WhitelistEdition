@@ -10,5 +10,6 @@ enum class Installer {
     SERVICE,
     AM,
     SHIZUKU,
+    DHIZUKU,
     DEVICE_OWNER
 }
