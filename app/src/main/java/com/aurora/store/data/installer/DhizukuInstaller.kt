@@ -63,6 +63,7 @@ class DhizukuInstaller @Inject constructor(
         const val DHIZUKU_PACKAGE_NAME = "com.rosan.dhizuku"
         const val PLAY_PACKAGE_NAME = "com.android.vending"
         private const val DHIZUKU_PERMISSION = "com.rosan.dhizuku.permission.API"
+        private const val TAG = "DhizukuInstaller"
 
         val installerInfo: InstallerInfo
             get() = InstallerInfo(
@@ -79,17 +80,51 @@ class DhizukuInstaller @Inject constructor(
          * Checks if Dhizuku permission is granted
          */
         fun checkPermission(context: Context): Boolean {
+            Log.d(TAG, "checkPermission() called")
             return try {
+                Log.d(TAG, "Initializing Dhizuku...")
                 Dhizuku.init(context)
-                Dhizuku.isPermissionGranted()
+                Log.d(TAG, "Dhizuku initialized successfully")
+                
+                val isGranted = Dhizuku.isPermissionGranted()
+                Log.d(TAG, "Permission granted: $isGranted")
+                
+                isGranted
             } catch (e: Exception) {
-                Log.e("DhizukuInstaller", "Error checking Dhizuku permission: ${e.message}")
+                Log.e(TAG, "Error checking Dhizuku permission", e)
+                Log.e(TAG, "Exception message: ${e.message}")
+                Log.e(TAG, "Exception type: ${e.javaClass.simpleName}")
                 false
             }
         }
     }
 
     private val TAG = DhizukuInstaller::class.java.simpleName
+
+    override fun install(download: Download) {
+        Log.i(TAG, "DhizukuInstaller.install() called for ${download.packageName}")
+        super.install(download)
+
+        if (isAlreadyQueued(download.packageName)) {
+            Log.i(TAG, "${download.packageName} already queued")
+        } else {
+            download.sharedLibs.forEach {
+                // Shared library packages cannot be updated
+                if (!isSharedLibraryInstalled(context, it.packageName, it.versionCode)) {
+                    install(
+                        packageName = download.packageName,
+                        versionCode = download.versionCode,
+                        sharedLibPkgName = it.packageName
+                    )
+                }
+            }
+            install(
+                packageName = download.packageName,
+                versionCode = download.versionCode,
+                displayName = download.displayName
+            )
+        }
+    }
 
     private val iPackageManager: IPackageManager by lazy {
         IPackageManager.Stub.asInterface(
@@ -113,30 +148,6 @@ class DhizukuInstaller @Inject constructor(
                 PackageInstallerHidden(iPackageInstaller, PLAY_PACKAGE_NAME, 0)
             )
         } else null
-    }
-
-    override fun install(download: Download) {
-        super.install(download)
-
-        if (isAlreadyQueued(download.packageName)) {
-            Log.i(TAG, "${download.packageName} already queued")
-        } else {
-            download.sharedLibs.forEach {
-                // Shared library packages cannot be updated
-                if (!isSharedLibraryInstalled(context, it.packageName, it.versionCode)) {
-                    install(
-                        packageName = download.packageName,
-                        versionCode = download.versionCode,
-                        sharedLibPkgName = it.packageName
-                    )
-                }
-            }
-            install(
-                packageName = download.packageName,
-                versionCode = download.versionCode,
-                displayName = download.displayName
-            )
-        }
     }
 
     private fun install(
