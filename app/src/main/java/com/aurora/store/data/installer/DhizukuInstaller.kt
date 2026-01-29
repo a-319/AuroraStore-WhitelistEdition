@@ -28,10 +28,8 @@ import android.content.pm.IPackageManager
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageInstaller.SessionParams
 import android.content.pm.PackageInstallerHidden
-import android.content.pm.PackageManager
 import android.content.pm.PackageManagerHidden
 import android.os.Build
-import android.os.IBinder
 import android.os.ServiceManager
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -82,7 +80,8 @@ class DhizukuInstaller @Inject constructor(
          */
         fun checkPermission(context: Context): Boolean {
             return try {
-                context.checkSelfPermission(DHIZUKU_PERMISSION) == PackageManager.PERMISSION_GRANTED
+                Dhizuku.init(context)
+                Dhizuku.isPermissionGranted()
             } catch (e: Exception) {
                 Log.e("DhizukuInstaller", "Error checking Dhizuku permission: ${e.message}")
                 false
