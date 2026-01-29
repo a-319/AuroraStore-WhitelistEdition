@@ -50,6 +50,9 @@ import com.aurora.store.util.PackageUtil.isSharedLibraryInstalled
 import com.rosan.dhizuku.api.Dhizuku
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.rikka.tools.refine.Refine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -78,18 +81,27 @@ class DhizukuInstaller @Inject constructor(
 
         /**
          * Checks if Dhizuku permission is granted
+         * Runs on background thread to avoid ANR
          */
         fun checkPermission(context: Context): Boolean {
             Log.d(TAG, "checkPermission() called")
             return try {
-                Log.d(TAG, "Initializing Dhizuku...")
-                Dhizuku.init(context)
-                Log.d(TAG, "Dhizuku initialized successfully")
-                
-                val isGranted = Dhizuku.isPermissionGranted()
-                Log.d(TAG, "Permission granted: $isGranted")
-                
-                isGranted
+                // Run Dhizuku.init() in background to avoid blocking main thread
+                runBlocking(Dispatchers.IO) {
+                    try {
+                        Log.d(TAG, "Initializing Dhizuku in background thread...")
+                        Dhizuku.init(context)
+                        Log.d(TAG, "Dhizuku initialized successfully")
+                        
+                        val isGranted = Dhizuku.isPermissionGranted()
+                        Log.d(TAG, "Permission granted: $isGranted")
+                        
+                        isGranted
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error in Dhizuku initialization", e)
+                        false
+                    }
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error checking Dhizuku permission", e)
                 Log.e(TAG, "Exception message: ${e.message}")
