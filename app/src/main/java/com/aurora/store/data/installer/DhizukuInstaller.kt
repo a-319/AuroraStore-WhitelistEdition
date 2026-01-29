@@ -28,6 +28,7 @@ import android.content.pm.IPackageManager
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageInstaller.SessionParams
 import android.content.pm.PackageInstallerHidden
+import android.content.pm.PackageManager
 import android.content.pm.PackageManagerHidden
 import android.os.Build
 import android.util.Log
@@ -62,6 +63,7 @@ class DhizukuInstaller @Inject constructor(
     companion object {
         const val DHIZUKU_PACKAGE_NAME = "com.rosan.dhizuku"
         const val PLAY_PACKAGE_NAME = "com.android.vending"
+        private const val DHIZUKU_PERMISSION = "com.rosan.dhizuku.permission.API"
 
         val installerInfo: InstallerInfo
             get() = InstallerInfo(
@@ -73,6 +75,18 @@ class DhizukuInstaller @Inject constructor(
                 subtitle = R.string.dhizuku_installer_subtitle,
                 description = R.string.dhizuku_installer_desc
             )
+
+        /**
+         * Checks if Dhizuku permission is granted
+         */
+        fun checkPermission(context: Context): Boolean {
+            return try {
+                context.checkSelfPermission(DHIZUKU_PERMISSION) == PackageManager.PERMISSION_GRANTED
+            } catch (e: Exception) {
+                Log.e("DhizukuInstaller", "Error checking Dhizuku permission: ${e.message}")
+                false
+            }
+        }
     }
 
     private val TAG = DhizukuInstaller::class.java.simpleName
