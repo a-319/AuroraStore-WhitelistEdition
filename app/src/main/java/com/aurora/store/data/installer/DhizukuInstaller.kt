@@ -32,6 +32,7 @@ import android.content.pm.PackageManager
 import android.content.pm.PackageManagerHidden
 import android.os.Build
 import android.os.IBinder
+import android.os.ServiceManager
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.PendingIntentCompat
@@ -49,7 +50,6 @@ import com.aurora.store.data.receiver.InstallerStatusReceiver
 import com.aurora.store.data.room.download.Download
 import com.aurora.store.util.PackageUtil.isSharedLibraryInstalled
 import com.rosan.dhizuku.api.Dhizuku
-import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.rikka.tools.refine.Refine
 import javax.inject.Inject
@@ -92,17 +92,15 @@ class DhizukuInstaller @Inject constructor(
 
     private val TAG = DhizukuInstaller::class.java.simpleName
 
-    private fun IBinder.wrap() = DhizukuBinderWrapper.create(this)
-
     private val iPackageManager: IPackageManager by lazy {
         IPackageManager.Stub.asInterface(
-            Dhizuku.binderWrapper(Dhizuku.systemService("package"))
+            Dhizuku.binderWrapper(ServiceManager.getService("package"))
         )
     }
 
     private val iPackageInstaller: IPackageInstaller by lazy {
         IPackageInstaller.Stub.asInterface(
-            iPackageManager.packageInstaller.asBinder().wrap()
+            Dhizuku.binderWrapper(iPackageManager.packageInstaller.asBinder())
         )
     }
 
@@ -165,7 +163,7 @@ class DhizukuInstaller @Inject constructor(
 
             val sessionId = packageInstaller!!.createSession(params)
             val iSession = IPackageInstallerSession.Stub.asInterface(
-                iPackageInstaller.openSession(sessionId).asBinder().wrap()
+                Dhizuku.binderWrapper(iPackageInstaller.openSession(sessionId).asBinder())
             )
             val session = Refine.unsafeCast<PackageInstaller.Session>(
                 PackageInstallerHidden.SessionHidden(iSession)
