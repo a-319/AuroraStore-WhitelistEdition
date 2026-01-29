@@ -58,6 +58,7 @@ class AppInstaller @Inject constructor(
     private val serviceInstaller: ServiceInstaller,
     private val amInstaller: AMInstaller,
     private val shizukuInstaller: ShizukuInstaller,
+    private val dhizukuInstaller: DhizukuInstaller,
     private val deviceOwnerInstaller: DeviceOwnerInstaller
 ) {
 
@@ -82,6 +83,7 @@ class AppInstaller @Inject constructor(
                 if (hasAuroraService(context)) ServiceInstaller.installerInfo else null,
                 if (hasAppManager(context)) AMInstaller.installerInfo else null,
                 if (hasShizukuOrSui(context)) ShizukuInstaller.installerInfo else null,
+                if (hasDhizuku(context)) DhizukuInstaller.installerInfo else null,
                 if (isDeviceOwner(context)) DeviceOwnerInstaller.installerInfo else null
             )
         }
@@ -224,6 +226,7 @@ class AppInstaller @Inject constructor(
                 Installer.SERVICE -> hasAuroraService(context)
                 Installer.AM -> false // We cannot check if AppManager has ability to auto-update
                 Installer.SHIZUKU -> isOAndAbove && hasShizukuOrSui(context) && hasShizukuPerm()
+                Installer.DHIZUKU -> hasDhizuku(context) && hasDhizukuPerm(context)
                 Installer.DEVICE_OWNER -> isDeviceOwner(context)
             }
         }
@@ -262,6 +265,14 @@ class AppInstaller @Inject constructor(
             return Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
         }
 
+        fun hasDhizuku(context: Context): Boolean {
+            return PackageUtil.isInstalled(context, DhizukuInstaller.DHIZUKU_PACKAGE_NAME)
+        }
+
+        fun hasDhizukuPerm(context: Context): Boolean {
+            return DhizukuInstaller.checkPermission(context)
+        }
+
         fun uninstall(context: Context, packageName: String) {
             val intent = Intent().apply {
                 data = Uri.fromParts("package", packageName, null)
@@ -291,6 +302,13 @@ class AppInstaller @Inject constructor(
             Installer.SHIZUKU -> {
                 if (hasShizukuOrSui(context) && hasShizukuPerm()) {
                     shizukuInstaller
+                } else {
+                    defaultInstaller
+                }
+            }
+            Installer.DHIZUKU -> {
+                if (hasDhizuku(context) && hasDhizukuPerm(context)) {
+                    dhizukuInstaller
                 } else {
                     defaultInstaller
                 }
