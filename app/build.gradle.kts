@@ -239,8 +239,8 @@ dependencies {
     implementation(libs.rikka.shizuku.api)
     implementation(libs.rikka.shizuku.provider)
 
-    //Dhizuku - From Maven Central, not JitPack
-    implementation("io.github.iamr0s:Dhizuku-API:2.5.4")
+    //Dhizuku - Using older version 2.4 for API stability
+    implementation("io.github.iamr0s:Dhizuku-API:2.4")
 
     implementation(libs.lsposed.hiddenapibypass)
 
