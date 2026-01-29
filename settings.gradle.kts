@@ -16,10 +16,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // libsu is only available via jitpack
+        // libsu and Dhizuku-API are available via jitpack
         maven("https://jitpack.io/") {
             content {
                 includeModule("com.github.topjohnwu.libsu", "core")
+                includeModule("com.github.iamr0s", "Dhizuku-API")
             }
         }
         // Only included in huawei variants
