@@ -240,7 +240,7 @@ dependencies {
     implementation(libs.rikka.shizuku.provider)
 
     //Dhizuku
-    implementation("com.github.iamr0s:Dhizuku-API:2.4")
+    implementation("com.github.iamr0s:Dhizuku:2.4")
 
     implementation(libs.lsposed.hiddenapibypass)
 
