@@ -395,6 +395,10 @@
     <string name="am_installer_desc">Requires App Manager, need adb/root mode to install when miui optimization is on</string>
     <string name="shizuku_installer_subtitle">Using system APIs directly with adb/root privileges</string>
     <string name="shizuku_installer_desc">Requires Shizuku or Sui, needs to be setup and permission granted</string>
+    <string name="pref_install_mode_dhizuku">Dhizuku installer</string>
+    <string name="dhizuku_installer_subtitle">Using system APIs with device admin privileges</string>
+    <string name="dhizuku_installer_desc">Requires Dhizuku app, needs to be activated as device admin and permission granted</string>
+    <string name="installer_dhizuku_unavailable">Dhizuku is not installed or set up properly.</string>
     <string name="device_owner_installer_subtitle">Silent installation with device owner privileges</string>
     <string name="device_owner_installer_desc">Uses Device Owner permissions for completely silent app installation without any user interaction. Requires the app to be set as device owner.</string>
 
