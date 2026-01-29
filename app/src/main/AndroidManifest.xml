@@ -48,6 +48,9 @@
         android:name="android.permission.USE_CREDENTIALS"
         android:maxSdkVersion="22" />
 
+    <!-- Dhizuku permission -->
+    <uses-permission android:name="com.rosan.dhizuku.permission.API" />
+
     <uses-feature
         android:name="android.software.leanback"
         android:required="false" />
